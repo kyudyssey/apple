@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f1f0e7">
-  <title>사과게임 | 합이 10</title>
+  <title>사과게임 | 사과를 수확해요</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -128,34 +128,48 @@
     }
 
     .cell {
+      position: relative;
       display: grid;
       min-width: 0;
       aspect-ratio: 1;
       place-items: center;
-      color: #30352b;
-      background: var(--tile);
-      border: 1px solid #fdfcf7;
-      border-radius: 4px;
-      box-shadow: 0 2px 0 var(--tile-shadow);
+      color: #fffdf4;
+      background: transparent;
+      border: 0;
+      border-radius: 50%;
+      box-shadow: none;
       cursor: crosshair;
-      font: 600 clamp(15px, 3.4vw, 25px)/1 var(--display);
+      font: 700 clamp(13px, 2.5vw, 20px)/1 var(--display);
       transition: background-color 100ms ease, color 100ms ease, transform 100ms ease, box-shadow 100ms ease;
     }
-    .cell:nth-child(7n + 2), .cell:nth-child(11n + 4) { color: #8c4538; }
-    .cell.selected {
+    .cell .fruit {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: clamp(25px, 5.7vw, 48px);
+      line-height: 1;
+      filter: drop-shadow(0 2px 1px #59201944);
+      pointer-events: none;
+    }
+    .cell .cell-number {
+      position: relative;
       z-index: 1;
       color: #fffdf4;
-      background: var(--apple);
-      border-color: #c32e20;
-      box-shadow: 0 2px 0 #a92c21, 0 0 0 2px #f7c5a9;
+      text-shadow: 0 1px 3px #531610, 0 0 2px #531610;
+      pointer-events: none;
+    }
+    .cell.selected {
+      z-index: 1;
       transform: translateY(-1px) scale(1.04);
     }
+    .cell.selected .fruit { filter: drop-shadow(0 0 5px #fff1a8) brightness(1.12); }
     .cell.empty {
-      background: #cdd0c0;
-      border-color: #cdd0c0;
-      box-shadow: inset 0 1px 3px #656c5430;
+      opacity: 0;
       cursor: default;
     }
+    .cell.harvesting { animation: harvest-pop 170ms ease-in forwards; pointer-events: none; }
+    .board.is-animating { pointer-events: none; }
     .cell:focus-visible { outline: 3px solid #557d3a; outline-offset: 1px; }
 
     .board-footer {
@@ -169,7 +183,7 @@
       font: 10px var(--mono);
     }
     .sum-readout { color: var(--ink); font-weight: 500; }
-    .sum-readout.over { color: var(--apple); }
+    .sum-readout.target { color: var(--leaf); }
 
     .sidebar { padding-top: 3px; }
     .score-label, .stat-label { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
@@ -202,6 +216,41 @@
       backdrop-filter: blur(3px);
     }
     .overlay[hidden] { display: none; }
+    .start-overlay {
+      position: fixed;
+      z-index: 10;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #20241ed9;
+      backdrop-filter: blur(5px);
+    }
+    .start-overlay[hidden] { display: none; }
+    .start-card {
+      width: min(100%, 390px);
+      padding: 34px 30px 30px;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid #fffdf1;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 18px 60px #12150f66;
+      animation: pop-in 260ms ease-out both;
+    }
+    .start-apple { display: block; margin-bottom: 12px; font-size: 48px; line-height: 1; }
+    .start-card h2 { margin: 0 0 9px; font-size: 25px; }
+    .start-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .start-card .restart { min-height: 46px; margin-top: 23px; padding: 0 22px; color: white; background: var(--apple); border-color: var(--apple); }
+    .start-card .restart:hover { background: #b92f22; border-color: #b92f22; }
+    #confetti-canvas {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
     .result {
       width: min(100%, 290px);
       padding: 25px 22px 22px;
@@ -221,6 +270,7 @@
     .result .restart:hover { background: #3b4135; }
 
     @keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes harvest-pop { to { opacity: 0; transform: scale(.35) rotate(14deg); } }
     @media (max-width: 720px) {
       .shell { width: min(100% - 28px, 520px); padding-top: 18px; }
       main { grid-template-columns: 1fr; gap: 24px; padding-top: 25px; }
@@ -274,9 +324,9 @@
         <div class="game-heading">
           <div>
             <h1>열 개를 모아라</h1>
-            <p class="subtitle">숫자를 이어 합이 10이 되면 수확!</p>
+            <p class="subtitle">숫자를 이어 합이 10의 배수가 되면 수확!</p>
           </div>
-          <span class="goal-tag">TARGET : 10</span>
+          <span class="goal-tag">10의 배수</span>
         </div>
         <div class="board-frame">
           <div class="board" id="board" role="grid" aria-label="8 곱하기 8 숫자 격자"></div>
@@ -308,7 +358,7 @@
           </div>
           <div class="stat">
             <div class="stat-label">TIME LEFT</div>
-            <div class="stat-value timer-value" id="time-left">2:00</div>
+            <div class="stat-value timer-value" id="time-left">1:00</div>
             <div class="timer-track" aria-hidden="true"><div class="timer-fill" id="timer-fill"></div></div>
           </div>
         </div>
@@ -316,14 +366,24 @@
           <h2 class="howto-title">수확 방법</h2>
           <ol class="howto-list">
             <li><span class="step">1</span><span>숫자를 누른 채 상하좌우로 이어주세요.</span></li>
-            <li><span class="step">2</span><span>합이 10이면 손을 떼서 사과를 수확해요.</span></li>
-            <li><span class="step">3</span><span>10을 넘으면 선택이 자동으로 풀려요.</span></li>
+            <li><span class="step">2</span><span>합이 10의 배수일 때 손을 떼면 수확해요.</span></li>
+            <li><span class="step">3</span><span>20, 30처럼 더 큰 배수도 노려보세요.</span></li>
           </ol>
         </section>
         <div class="best-note">최고 점수는 이 기기에 자동 저장됩니다.</div>
       </aside>
     </main>
   </div>
+
+  <div class="start-overlay" id="start-overlay">
+    <section class="start-card" role="dialog" aria-modal="true" aria-labelledby="start-title" aria-describedby="start-description">
+      <span class="start-apple" aria-hidden="true">🍎</span>
+      <h2 id="start-title">사과를 수확할 시간!</h2>
+      <p id="start-description">게임을 시작하려면<br>아래 시작하기 버튼을 클릭하세요.</p>
+      <button class="restart" id="start-game" type="button">시작하기 🍎</button>
+    </section>
+  </div>
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
 
   <script>
     (() => {
@@ -334,8 +394,10 @@
       const timerFill = document.querySelector('#timer-fill');
       const sumReadout = document.querySelector('#sum-readout');
       const overlay = document.querySelector('#overlay');
+      const startOverlay = document.querySelector('#start-overlay');
+      const confettiCanvas = document.querySelector('#confetti-canvas');
       const finalScore = document.querySelector('#final-score');
-      const gameLength = 120;
+      const gameLength = 60;
       const boardSize = 8;
       const storageKey = 'apple-game-best-score';
 
@@ -345,7 +407,12 @@
       let secondsLeft = gameLength;
       let dragging = false;
       let gameOver = false;
+      let gameStarted = false;
+      let resolvingHarvest = false;
+      let boardRevision = 0;
+      let bestAtStart = readBestScore();
       let timerId;
+      let confettiFrame;
 
       function readBestScore() {
         try {
@@ -364,18 +431,37 @@
           cell.className = 'cell';
           cell.setAttribute('role', 'gridcell');
           cell.dataset.index = String(index);
-          cell.textContent = String(value);
           boardElement.append(cell);
+          renderCell(cell, value);
         });
+      }
+
+      function renderCell(cell, value) {
+        cell.classList.remove('selected', 'harvesting');
+        cell.classList.toggle('empty', value === 0);
+        cell.dataset.value = String(value);
+        cell.setAttribute('aria-label', value ? `${value} 사과` : '빈 칸');
+        cell.replaceChildren();
+        if (!value) return;
+
+        const fruit = document.createElement('span');
+        fruit.className = 'fruit';
+        fruit.setAttribute('aria-hidden', 'true');
+        fruit.textContent = '🍎';
+        const number = document.createElement('span');
+        number.className = 'cell-number';
+        number.textContent = String(value);
+        cell.append(fruit, number);
       }
 
       function updateScore() {
         scoreElement.textContent = String(score);
-        const best = Math.max(readBestScore(), score);
-        bestElement.textContent = String(best);
-        if (score > 0 && best === score) {
+        let best = readBestScore();
+        if (score > best) {
+          best = score;
           try { localStorage.setItem(storageKey, String(score)); } catch { /* Storage may be unavailable in private browsing. */ }
         }
+        bestElement.textContent = String(best);
       }
 
       function renderSelection() {
@@ -383,7 +469,7 @@
         selected.forEach(index => boardElement.children[index]?.classList.add('selected'));
         const total = selected.reduce((sum, index) => sum + values[index], 0);
         sumReadout.innerHTML = `선택 합계&nbsp; ${total}`;
-        sumReadout.classList.toggle('over', total > 10);
+        sumReadout.classList.toggle('target', total > 0 && total % 10 === 0);
       }
 
       function clearSelection() {
@@ -398,7 +484,7 @@
       }
 
       function visitCell(index) {
-        if (!dragging || gameOver || values[index] === 0) return;
+        if (!dragging || gameOver || resolvingHarvest || values[index] === 0) return;
         const previousPosition = selected.indexOf(index);
         if (previousPosition !== -1) {
           if (previousPosition === selected.length - 2) {
@@ -411,29 +497,77 @@
         if (previous !== undefined && !isAdjacent(previous, index)) return;
         selected.push(index);
         renderSelection();
-        const total = selected.reduce((sum, selectedIndex) => sum + values[selectedIndex], 0);
-        if (total > 10) {
-          clearSelection();
-          dragging = false;
-        }
       }
 
       function finishSelection() {
         if (!dragging) return;
         dragging = false;
         const total = selected.reduce((sum, index) => sum + values[index], 0);
-        if (selected.length > 1 && total === 10) {
-          selected.forEach(index => {
-            values[index] = 0;
-            const cell = boardElement.children[index];
-            cell.textContent = '';
-            cell.classList.add('empty');
-            cell.setAttribute('aria-label', '빈 칸');
-          });
-          score += selected.length * 10;
-          updateScore();
+        if (selected.length > 1 && total > 0 && total % 10 === 0) {
+          const harvested = [...selected];
+          selected = [];
+          renderSelection();
+          harvestApples(harvested);
+          return;
         }
         clearSelection();
+      }
+
+      function harvestApples(indices) {
+        resolvingHarvest = true;
+        boardElement.classList.add('is-animating');
+        indices.forEach(index => boardElement.children[index]?.classList.add('harvesting'));
+        score += indices.length * 10;
+        updateScore();
+        const revision = boardRevision;
+
+        window.setTimeout(() => {
+          if (revision !== boardRevision) return;
+          refillBoard(new Set(indices));
+          boardElement.classList.remove('is-animating');
+          resolvingHarvest = false;
+        }, 180);
+      }
+
+      function refillBoard(removedIndices) {
+        const nextValues = Array(boardSize * boardSize).fill(0);
+        const destinations = Array(boardSize * boardSize);
+        const firstCell = boardElement.children[0];
+        const rowGap = Number.parseFloat(getComputedStyle(boardElement).rowGap) || 0;
+        const rowStride = firstCell.getBoundingClientRect().height + rowGap;
+
+        for (let column = 0; column < boardSize; column += 1) {
+          const survivors = [];
+          for (let row = boardSize - 1; row >= 0; row -= 1) {
+            const sourceIndex = row * boardSize + column;
+            if (!removedIndices.has(sourceIndex)) survivors.push({ value: values[sourceIndex], sourceRow: row });
+          }
+
+          for (let row = boardSize - 1; row >= 0; row -= 1) {
+            const index = row * boardSize + column;
+            const tile = survivors.length
+              ? survivors.shift()
+              : { value: Math.floor(Math.random() * 9) + 1, isNew: true };
+            nextValues[index] = tile.value;
+            destinations[index] = { ...tile, row };
+          }
+        }
+
+        values = nextValues;
+        destinations.forEach((tile, index) => {
+          const cell = boardElement.children[index];
+          renderCell(cell, tile.value);
+          const rowsToFall = tile.isNew ? -(tile.row + 1) : tile.sourceRow - tile.row;
+          if (rowsToFall !== 0 && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            cell.animate(
+              [
+                { transform: `translateY(${rowsToFall * rowStride}px)`, opacity: 0.65 },
+                { transform: 'translateY(0)', opacity: 1 }
+              ],
+              { duration: 230 + Math.abs(rowsToFall) * 24, easing: 'cubic-bezier(.2,.75,.25,1)' }
+            );
+          }
+        });
       }
 
       function updateTimer() {
@@ -445,18 +579,25 @@
 
       function endGame() {
         gameOver = true;
+        gameStarted = false;
         dragging = false;
         clearSelection();
         finalScore.textContent = String(score);
         overlay.hidden = false;
+        if (score > bestAtStart) celebrateRecord();
       }
 
       function startGame() {
         window.clearInterval(timerId);
+        boardRevision += 1;
         score = 0;
         secondsLeft = gameLength;
         dragging = false;
         gameOver = false;
+        gameStarted = true;
+        resolvingHarvest = false;
+        bestAtStart = readBestScore();
+        startOverlay.hidden = true;
         overlay.hidden = true;
         createBoard();
         updateScore();
@@ -472,9 +613,61 @@
         }, 1000);
       }
 
+      function celebrateRecord() {
+        const context = confettiCanvas.getContext('2d');
+        if (!context) return;
+        window.cancelAnimationFrame(confettiFrame);
+
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        confettiCanvas.width = width * ratio;
+        confettiCanvas.height = height * ratio;
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        const colors = ['#d83e2e', '#f1bd42', '#557d3a', '#4c9aa0', '#f28b62'];
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const particles = Array.from({ length: reducedMotion ? 55 : 170 }, () => ({
+          x: Math.random() * width,
+          y: -Math.random() * height * 0.35,
+          velocityX: (Math.random() - 0.5) * 4,
+          velocityY: 2 + Math.random() * 5,
+          size: 4 + Math.random() * 6,
+          rotation: Math.random() * Math.PI,
+          spin: (Math.random() - 0.5) * 0.18,
+          color: colors[Math.floor(Math.random() * colors.length)]
+        }));
+        const duration = reducedMotion ? 1300 : 3200;
+        const startedAt = performance.now();
+
+        function drawFrame(now) {
+          context.clearRect(0, 0, width, height);
+          particles.forEach(particle => {
+            particle.x += particle.velocityX;
+            particle.y += particle.velocityY;
+            particle.velocityY += 0.075;
+            particle.rotation += particle.spin;
+            context.save();
+            context.translate(particle.x, particle.y);
+            context.rotate(particle.rotation);
+            context.fillStyle = particle.color;
+            context.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * 0.62);
+            context.restore();
+          });
+
+          if (now - startedAt < duration) {
+            confettiFrame = window.requestAnimationFrame(drawFrame);
+          } else {
+            context.clearRect(0, 0, width, height);
+          }
+        }
+
+        confettiFrame = window.requestAnimationFrame(drawFrame);
+      }
+
       boardElement.addEventListener('pointerdown', event => {
         const cell = event.target.closest('.cell');
-        if (!cell || gameOver || Number(cell.textContent) === 0) return;
+        if (!cell || !gameStarted || gameOver || resolvingHarvest || values[Number(cell.dataset.index)] === 0) return;
         event.preventDefault();
         dragging = true;
         selected = [];
@@ -482,17 +675,22 @@
       });
 
       window.addEventListener('pointermove', event => {
-        if (!dragging) return;
+        if (!dragging || resolvingHarvest) return;
         const cell = document.elementFromPoint(event.clientX, event.clientY)?.closest('.cell');
         if (cell && boardElement.contains(cell)) visitCell(Number(cell.dataset.index));
       });
 
       window.addEventListener('pointerup', finishSelection);
       window.addEventListener('pointercancel', finishSelection);
+      document.querySelector('#start-game').addEventListener('click', startGame);
       document.querySelector('#restart').addEventListener('click', startGame);
       document.querySelector('#play-again').addEventListener('click', startGame);
       bestElement.textContent = String(readBestScore());
-      startGame();
+      createBoard();
+      updateScore();
+      updateTimer();
+      clearSelection();
+      document.querySelector('#start-game').focus();
     })();
   </script>
 </body>
